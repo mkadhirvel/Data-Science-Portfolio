@@ -1,0 +1,129 @@
+---
+title: "COVID Europe Infection"
+author: "Muthukumar Kadhirvel"
+date: '2022-03-03'
+output:
+  word_document: default
+bibliography: bibliography.bib
+link-citations: yes
+---
+
+# Introduction
+
+## We are going to use COVID 19 Infection dataset and analyze the COVID 19 Pandemic and its influence in the Europe region. We can use this analysis and use them to extrapolate at the continent level or on a lower level like region. Using the data from the COVID 19 dataset we can then manipulate/transform the data into a uniform format and then use that data to create plots to analyze the course of the COVID 19 Pandemic in various countries. 
+
+# Problem Statement
+
+## Using the COVID 19 Infection dataset, analyze the COVID 19 Pandemic in Europe.
+
+# Process
+
+Europe COVID 19 Infection Data set
+@COVID19Infection
+
+## We are going to use the above publicly available data for the number of COVID 19 infections in Europe and each row contains the number of new cases and deaths reported per day and per country in Europe and has eleven variables. We then removed the redundant fields of year/month/day and countriesAndTerritories & geoId & countryterritoryCode. We also removed ContinentExp as it has the same value of Europe for all entries. We also modified the Date in a more usable format.
+
+```{r echo = TRUE}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(scales)
+theme_set(theme_minimal())
+covid_infection_original <- read_excel("COVID_19_Infection.xlsx",sheet = "Sheet1")
+covid_infection <- covid_infection_original[, c("dateRep","countriesAndTerritories","popData2020","cases","deaths")]
+names(covid_infection)[names(covid_infection) == 'dateRep'] <- "Date"
+names(covid_infection)[names(covid_infection) == 'countriesAndTerritories'] <- "Country"
+names(covid_infection)[names(covid_infection) == 'popData2020'] <- "Population"
+names(covid_infection)[names(covid_infection) == 'cases'] <- "Cases"
+names(covid_infection)[names(covid_infection) == 'deaths'] <- "Deaths"
+covid_infection$Date <- as.Date(covid_infection$Date, format = "%d/%m/%Y")
+```
+
+## The final dataset has five columns - Date/Country/Population/Cases/Deaths.
+
+```{r echo = TRUE}
+head(covid_infection)
+```
+
+## Then we are filtering out the first week of February to show a snapshot of the data across all countries and plotting the Cases/Deaths/Infection Rate/Death Rate. This would give a clear picutre of which country has been most affected amongst European countries. The Infection Rate and Death Rate would let us know which country is most affected and a possibility of its health system overwhelmed.
+
+```{r echo = TRUE}
+feb_df <- covid_infection[ which(covid_infection$Date >= '2022-02-01' & covid_infection$Date <= '2022-02-07'), ]
+ggplot(feb_df, aes(x=Date, y=Cases, group=Country, col=Country)) + geom_point() + ggtitle("Feb Europe Cases") + xlab("Date") + ylab("Cases") + geom_line() + scale_y_continuous(labels = label_number(suffix = "K", scale = 1e-3))
+ggplot(feb_df, aes(x=Date, y=Deaths, group=Country, col=Country)) + geom_point() + ggtitle("Feb Europe Deaths") + xlab("Date") + ylab("Deaths") + geom_line()
+ggplot(feb_df, aes(x=Date, y=Cases/Population, group=Country, col=Country)) + geom_point() + ggtitle("Feb Europe Infection Rate") + xlab("Date") + ylab("Infection Rate per Thousand People") + geom_line() + scale_y_continuous(labels = label_number(scale = 1e+3))
+ggplot(feb_df, aes(x=Date, y=Deaths/Population, group=Country, col=Country)) + geom_point() + ggtitle("Feb Europe Death Rate") + xlab("Date") + ylab("Death Rate per Million People") + geom_line() + scale_y_continuous(labels = label_number(scale = 1e+6))
+```
+
+## We can see that the more cases are in France/Germany/Italy, so we are filtering their data alone and creating plots to show the Cases/Deaths of those countries daily.
+
+```{r echo = TRUE}
+france_df <- covid_infection[ which(covid_infection$Country == "France"), ]
+germany_df <- covid_infection[ which(covid_infection$Country == "Germany"), ]
+italy_df <- covid_infection[ which(covid_infection$Country == "Italy"), ]
+ggplot(data=france_df, aes(x=Deaths, group=1)) +
+  geom_line(aes(y = Cases, colour = "France")) +
+  geom_line(data=germany_df, aes(y = Cases,colour="Germany")) +
+  geom_line(data=italy_df, aes(y = Cases,colour="Italy")) +
+  scale_colour_manual("", breaks = c("France", "Germany", "Italy"),
+                      values = c("darkred", "darkgreen", "steelblue")) +
+  xlab("Deaths") + ylab("Cases") + ggtitle("Daily COVID 19 Cases vs Deaths") +     
+  scale_y_continuous(labels = label_number(suffix = "K", scale = 1e-3))
+ggplot(data=france_df, aes(x=Date, group=1)) +
+  geom_line(aes(y = Cases, colour = "France")) +
+  geom_line(data=germany_df, aes(y = Cases,colour="Germany")) +
+  geom_line(data=italy_df, aes(y = Cases,colour="Italy")) +
+  scale_colour_manual("", breaks = c("France", "Germany", "Italy"),
+                      values = c("darkred", "darkgreen", "steelblue")) +
+  xlab("Date") + ylab("Cases") + ggtitle("Daily COVID 19 Cases") + 
+  scale_y_continuous(labels = label_number(suffix = "K", scale = 1e-3))
+ggplot(data=france_df, aes(x=Date, group=1)) +
+  geom_line(aes(y = Deaths, colour = "France")) +
+  geom_line(data=germany_df, aes(y = Deaths,colour="Germany")) +
+  geom_line(data=italy_df, aes(y = Deaths,colour="Italy")) +
+  scale_colour_manual("", breaks = c("France", "Germany", "Italy"),
+                      values = c("darkred", "darkgreen", "steelblue")) +
+  xlab("Date") + ylab("Deaths") + ggtitle("Daily COVID 19 Deaths")
+```
+
+## We are also showing both the Cases and Deaths in the same plot for France & Germany & Italy so that we can track the infection side by side.
+
+```{r echo = TRUE}
+ggplot(data=france_df,aes(Date, Cases)) + geom_line(color = "Blue") +
+  geom_line(aes(x = Date, y = Deaths * 300), color = "Red") +
+  scale_y_continuous(name = "Cases", labels = label_number(suffix = "K", scale = 1e-3),
+                     sec.axis = sec_axis(Deaths ~ . / 300, name = "Deaths")) +                      
+  theme(axis.title.y = element_text(color = "Blue"), axis.title.y.right = element_text(color = "Red")) +
+  ggtitle("Daily France COVID 19 Cases & Deaths")
+ggplot(data=germany_df,aes(Date, Cases)) + geom_line(color = "Blue") +
+  geom_line(aes(x = Date, y = Deaths * 300), color = "Red") +
+  scale_y_continuous(name = "Cases", labels = label_number(suffix = "K", scale = 1e-3),
+                     sec.axis = sec_axis(Deaths ~ . / 300, name = "Deaths")) +                      
+  theme(axis.title.y = element_text(color = "Blue"), axis.title.y.right = element_text(color = "Red")) +
+  ggtitle("Daily Germany COVID 19 Cases & Deaths")
+ggplot(data=italy_df,aes(Date, Cases)) + geom_line(color = "Blue") +
+  geom_line(aes(x = Date, y = Deaths * 300), color = "Red") +
+  scale_y_continuous(name = "Cases", labels = label_number(suffix = "K", scale = 1e-3),
+                     sec.axis = sec_axis(Deaths ~ . / 300, name = "Deaths")) +                      
+  theme(axis.title.y = element_text(color = "Blue"), axis.title.y.right = element_text(color = "Red")) +
+  ggtitle("Daily Italy COVID 19 Cases & Deaths")
+```
+
+# Analysis
+
+## We can use these existing data and the created plots to create a model to predict the future outcome of the COVID 19 Infection as it spreads throghout Europe. As we can see we have all the necessary information in hand to create a future prediction model based on the Date/Cases/Deaths variables. We can recommend building a model that is based on Logistic modeling and ARIMA model. Using these models, we can calculate the current R value and predict future R value as well.
+
+# Implications 
+
+## We can see a clear short spike in the number of Deaths in Apr 2020 when the number of cases are low. That period was the onset of the pandemic in France and hence the more deaths to cases ratio. In Nov 2020 to May 2021 the number of deaths again rise but this time the number of cases are also relatively high where we have started to manage the COVID 19 Pandemic better. In the recent data we can see the number of cases to deaths ratio has come down drastically because of the steps undertaken by various governments.
+
+# Limitations
+
+## We do not possess the necessary knowledge right now to create a future prediction model as for predicting a pandemic there are well set models such as SEIR that we need to learn and understand. But using the existing data and the various plots we can understand the COVID 19 pandemic as it is present in Europe. In the future we can involve Machine Learning to train the dataset to make it predict the future values.
+
+# Conclusion
+
+## We have existing publicly available data of the COVID 19 Infection in Europe and transformed into a more uniform format. Then have filtered down the data and created plots to highlight the pandemic and its effects in the various countries in Europe and the rate of infection and deaths amongst its population. Then have taken France, Germany & Italy who were most affected in terms of numbers to highlight the various spikes in numbers. Using this as a base in the future we can create prediction models to help governments and health care workers in terms of managing the COVID 19 pandemic. 
+
+# References
