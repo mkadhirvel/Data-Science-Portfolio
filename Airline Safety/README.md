@@ -2,7 +2,7 @@ Airline Safety
 
 Project Summary
 
-There has been widespread media coverage that flying via airlines are not safe anymore and this has caused air travel to subside in USA. In this project we assume the position of a Data Analyst in Southwest Airlines and creating both internal and external campaigns to assure the public that airline travel is safe in-spite of contrary media coverage.
+There has been widespread media coverage that flying via airlines are not safe anymore and this has caused air travel to subside in USA. In this project we assume the position of a Data Analyst in Southwest Airlines and creating both internal and external campaigns to assure the public that airline travel is safe in-spite of contrary media coverage. I am using Power BI to create the various visualizations used in the project.
 
 First we prepare a Project Dashboard for our internal team and create visualizations that are at an analytical level as our fellow analysts can easily comprehend the same. We infer via data that the number of incidents and fatalities of airlines are lower than that of Auto industry. Even in the airlines industry USA airlines are far better in terms of safety and reliability over the decades.
 
